@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# to keep track of things I've done, maybe make it fancy down the road?
+#
+#
+home=~
+# tilde needs to be specifed in it's own variable else it causes weird shit with ls
+base_dir=$home"/.clogs"
+mkdir -p ${base_dir}
+log_file="${base_dir}/$(date +%a'-'%d'-'%b'-'%Y).log"
+
+function add {
+    comment="${1}";
+    if [[ -z ${comment} ]]; then
+        exit
+    fi
+    echo "$(date +%H':'%M) - ${comment}" >> ${log_file};
+}
+
+function search {
+    keyword="${1}";
+    grep -iR "${keyword}" ${base_dir}/* /dev/null | awk -F\: '{print gensub( ".*/", "", $1)}' 2>/dev/null;
+}
+
+function list {
+    ls -ltA ${base_dir} | awk '{print $9}' | sed '/^$/d' ;
+}
+
+function display {
+    cat "${base_dir}/${1}";
+}
+
+function display_all {
+    for log in $(ls -t ${base_dir}); do
+        echo $log | sed 's/.log//'
+        cat "${base_dir}/${log}";
+    done
+}
+
+function today {
+    cat ${log_file};
+}
+
+function yesterday {
+    yesterday="${base_dir}/$(date -d 'yesterday' +%a'-'%d'-'%b'-'%Y).log"
+    if [[ -f ${yesterday} ]]; then
+        cat  ${yesterday};
+    else
+        echo "No log for yesterday."
+    fi
+}
+
+function help {
+    echo "tool to remember stuff i've done
+    options;
+    add entry:         -a \"I've done some stuff\"
+    search:            -s \"stuff\"
+    list:              -l;
+    display:           -d Wed-22-Jul-2020.log
+    display all:       -c
+    display today:     -t
+    display yesterday: -y";
+}
+
+if [[ $# -lt 1 ]]; then
+    help
+    exit
+fi
+
+while getopts "a:s:ld:cty" OPTION 2>/dev/null; do
+    case $OPTION in
+        a)
+            add "${OPTARG}"
+            ;;
+        s)
+            search "${OPTARG}"
+            ;;
+        l)
+            list
+            ;;
+        d)
+            display "${OPTARG}"
+            ;;
+        c)
+            display_all
+            ;;
+        t)
+            today
+            ;;
+        y)
+            yesterday
+            ;;
+        \?)
+            help
+            ;;
+    esac
+done
