@@ -38,7 +38,11 @@ function display_all {
 }
 
 function today {
-    cat ${log_file};
+    if [[ -f ${log_file} ]]; then
+        cat  ${log_file};
+    else
+        echo "No log yet for today.. :("
+    fi
 }
 
 function yesterday {
